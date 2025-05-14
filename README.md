@@ -11,6 +11,6 @@ See the [documentation](https://ckrawczyk.github.io/Jax-Zero-Contour/) for more 
 ## Installation
 
 ```bash
-pip install jax-zero-contour
+pip install jax_zero_contour
 ```
 
