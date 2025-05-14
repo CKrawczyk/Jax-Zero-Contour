@@ -6,7 +6,7 @@ Find and follow a zero value contour for any 2D function written in Jax.  This p
 2. hits an end point (e.g. a discontinuity in the function)
 3. reaches some maximum number of steps
 
-See the documentation for more details.
+See the [documentation](https://ckrawczyk.github.io/Jax-Zero-Contour/) for more details.
 
 ## Installation
 
