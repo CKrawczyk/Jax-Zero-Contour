@@ -1,0 +1,206 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How it works &mdash; Jax Zero Contour 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example 1, smooth function" href="Example_1.html" />
+    <link rel="prev" title="Jax-Zero-Contour" href="README.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Jax Zero Contour
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Jax-Zero-Contour</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How it works</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#traditional-methods">Traditional methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#this-method">This method</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#zero-finding">Zero finding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#zero-following">Zero following</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Example_1.html">Example 1, smooth function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_2.html">Example 2, discontinuous function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3.html">Example 3, no zero contour</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4.html">Example 4, critical curves and caustics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="full_api.html">Zero Finder</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Jax Zero Contour</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How it works</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/How_it_works.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-it-works">
+<h1>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h1>
+<p>The goal of this function is to take a 2D function and find a set of points where this function is equal to zero.</p>
+<section id="traditional-methods">
+<h2>Traditional methods<a class="headerlink" href="#traditional-methods" title="Link to this heading"></a></h2>
+<p>The most traditional way to go about this is to evaluate the function on a grid, find adjacent gird cells with different signs, and use interpolation to find the zero on the edge between the cells.  While this works well for most plotting situations, this has several drawbacks:</p>
+<ol class="arabic simple">
+<li><p>If the function is discontinuous this can lead to a “false zero” being found as two adjacent cells can have different sign but not have the function pass through zero between them</p></li>
+<li><p>A fixed grid might not be able to capture the shape of the contour in areas where it is changing quickly</p></li>
+<li><p>If the contour covers a large extent in either dimension a large grid is needed leading to a large number of function evaluations</p></li>
+<li><p>The zeros are only as accurate as the interpolation function being used (and this is typically quite low)</p></li>
+</ol>
+</section>
+<section id="this-method">
+<h2>This method<a class="headerlink" href="#this-method" title="Link to this heading"></a></h2>
+<p>To try and overcome these limitations, this code instead makes use of Jax’s auto-differentiation framework to apply gradient based methods for finding the zeros of the function.  This is done in a two step process:</p>
+<ol class="arabic simple">
+<li><p>Zero finding</p></li>
+<li><p>Zero following</p></li>
+</ol>
+<section id="zero-finding">
+<h3>Zero finding<a class="headerlink" href="#zero-finding" title="Link to this heading"></a></h3>
+<p>For zero finding we using Newton’s method.  This is an iterative method that takes in a starting point and each step moves it closer to a zero of the function by following it either up/down hill with a step size proportional to the gradient of the function.</p>
+<p>In 1D function <span class="math notranslate nohighlight">\(f(x)\)</span> Newton’s method is:</p>
+<div class="math notranslate nohighlight">
+\[x_{i+1} = x_i - \frac{f(x_i)}{f'(x_i)}\]</div>
+<p>For a ND function <span class="math notranslate nohighlight">\(F(\vec{x})\)</span>, this needs to be adjusted a bit:</p>
+<div class="math notranslate nohighlight">
+\[\vec{x}_{i+1} = \vec{x}_i - J^{+}_{F}(\vec{x}_i) F(\vec{x}_i)\]</div>
+<p>Where <span class="math notranslate nohighlight">\(J^{+}_{F}(\vec{x}_i)\)</span> is the pseudoinverse of the jacobian of <span class="math notranslate nohighlight">\(F\)</span> given by <span class="math notranslate nohighlight">\(J^{+} = (J^T J)^{-1}J^T\)</span>.</p>
+<p>We have a 2D function, so the jacobian <span class="math notranslate nohighlight">\(\vec{J}\)</span> is a 2 element vector, and the pseudoinverse is <span class="math notranslate nohighlight">\(J^{+} = \frac{\vec{J}(\vec{x}_i)}{|\vec{J}(\vec{x}_i)|^2}\)</span>.</p>
+<p>So our final Newton’s setp is:</p>
+<div class="math notranslate nohighlight">
+\[\vec{x}_{i+1} = \vec{x}_i - \frac{\vec{J}(\vec{x}_i) F(\vec{x}_i)}{|\vec{J}(\vec{x}_i)|^2} \]</div>
+</section>
+<section id="zero-following">
+<h3>Zero following<a class="headerlink" href="#zero-following" title="Link to this heading"></a></h3>
+<p>Once a zero has been found the contour can be followed by setting up a dynamical system with the following conditions:</p>
+<ul class="simple">
+<li><p>Let <span class="math notranslate nohighlight">\(t\)</span> = “length along the contour”</p></li>
+<li><p>Let <span class="math notranslate nohighlight">\(F(x, y)\)</span> be the function we want the contours of</p></li>
+<li><p>Let <span class="math notranslate nohighlight">\(F(x_0, y_0) = 0\)</span> be an initial point on the contour</p></li>
+</ul>
+<p>and we want to find a set of values at time <span class="math notranslate nohighlight">\(i\)</span> such that <span class="math notranslate nohighlight">\(F(x_i, y_i) = 0\)</span> for all <span class="math notranslate nohighlight">\(i\)</span>.  This is the same as saying:</p>
+<div class="math notranslate nohighlight">
+\[\frac{d}{dt} F(x, y) = 0\]</div>
+<p>From the law of partial derivatives this implies:</p>
+<div class="math notranslate nohighlight">
+\[\frac{d}{dt} F(x, y) = \frac{\partial F}{\partial x}\frac{dx}{dt} + \frac{\partial F}{\partial y}\frac{dy}{dt} + \frac{\partial F}{\partial t} = 0\]</div>
+<p>As <span class="math notranslate nohighlight">\(F\)</span> is time independent the final <span class="math notranslate nohighlight">\(\frac{\partial f}{\partial t}\)</span> term is zero.  This expression can be rearranged as:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial F}{\partial x}\frac{dx}{dt} = -\frac{\partial F}{\partial y}\frac{dy}{dt}\]</div>
+<p>leading to:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\frac{dx}{dt}}{\frac{\partial F}{\partial y}} = -\frac{\frac{dy}{dt}}{\frac{\partial F}{\partial x}} = c\]</div>
+<p>for any constant <span class="math notranslate nohighlight">\(c\)</span>.  Setting <span class="math notranslate nohighlight">\(c=1\)</span> we can see this reduces to:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\frac{dx}{dt} &amp;=&amp; \frac{\partial F}{\partial y} \\
+\frac{dy}{dt} &amp;=&amp; -\frac{\partial F}{\partial x}\end{split}\]</div>
+<p>At this point we can see that this is just a relabeling of Hamilton’s equations from physics where the <span class="math notranslate nohighlight">\(q \rightarrow x\)</span>, <span class="math notranslate nohighlight">\(p \rightarrow y\)</span>, and <span class="math notranslate nohighlight">\(H \rightarrow F\)</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Fundamentally this connection with Hamilton’s equation is not to surprising.  The physical system solves for all value in the position-momentum phase space where the energy is constant.  If position and momentum are both 1D values and we pick an initial state where the energy is zero, we will exactly set up a system that would solve for the zero contour of the energy function.</p>
+<p>Swapping position for <span class="math notranslate nohighlight">\(x\)</span>, momentum for <span class="math notranslate nohighlight">\(y\)</span>, and the energy function for <span class="math notranslate nohighlight">\(F(x, y)\)</span> we have exactly recovered the problem we are trying to solve.</p>
+</div>
+<p>Now we can construct a PDE solver for our initial value problem.  If we use a simple Euler step the path will quickly diverge from the true contour unless the step size is very small.  To avoid these errors from getting too large we will do a two step process for solving the path.</p>
+<ol class="arabic simple">
+<li><p>Take an Euler step normalized by the magnitude of the gradient</p></li>
+<li><p>Use Newton’s method to bring the proposed point back onto the zero contour (to some desired tolerance)</p></li>
+</ol>
+<p>The update for the first step looks like:</p>
+<div class="math notranslate nohighlight">
+\[\vec{x}_{i+1/2} = \vec{x}_i + \delta \frac{R_{90}\vec{J}(\vec{x}_i)}{|\vec{J}(\vec{x}_i)|}\]</div>
+<p>Where <span class="math notranslate nohighlight">\(R_{90}\)</span> is a 90 degree rotation matrix.</p>
+<p>The update for the second step is the same as above (multiple of these steps might be needed):</p>
+<div class="math notranslate nohighlight">
+\[\vec{x}_{i+1} = \vec{x}_{i+1/2} - \frac{\vec{J}(\vec{x}_{i+1/2}) F(\vec{x}_{i+1/2})}{|\vec{J}(\vec{x}_{i+1/2})|^2}\]</div>
+<p>When written in this way we can see that this algorithm can be rephrased as “walk perpendicular to the gradient by a fixed distance” followed by “walk along the gradient until you are at the value zero.”</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="README.html" class="btn btn-neutral float-left" title="Jax-Zero-Contour" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Example_1.html" class="btn btn-neutral float-right" title="Example 1, smooth function" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Coleman Krawczyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

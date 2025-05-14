@@ -1,0 +1,524 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Example 1, smooth function &mdash; Jax Zero Contour 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example 2, discontinuous function" href="Example_2.html" />
+    <link rel="prev" title="How it works" href="How_it_works.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Jax Zero Contour
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="README.html">Jax-Zero-Contour</a></li>
+<li class="toctree-l1"><a class="reference internal" href="How_it_works.html">How it works</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example 1, smooth function</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#imports">Imports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#finding-the-zero-contours">Finding the zero contours</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tolerance">Tolerance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#stopping-conditions">Stopping conditions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#none">None</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#end-point">End point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#closed-loop">Closed loop</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Example_2.html">Example 2, discontinuous function</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_3.html">Example 3, no zero contour</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_4.html">Example 4, critical curves and caustics</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="full_api.html">Zero Finder</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Jax Zero Contour</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Example 1, smooth function</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Example_1.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="example-1-smooth-function">
+<h1>Example 1, smooth function<a class="headerlink" href="#example-1-smooth-function" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">zero_contour_finder</span></code> function will find points along the zero contour of a 2D function defined with Jax.  This example will walk though its basic usage and what each of the input parameters are.</p>
+<section id="imports">
+<h2>Imports<a class="headerlink" href="#imports" title="Link to this heading"></a></h2>
+<p>We begin with some basic imports for Jax, Matplotlib, and the zero contour functions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While it is necessary to use 64 bit precision to use the zero contour functions, it can be useful to help avoid floating point errors for very rapidly changing functions.</p>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+<span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s2">&quot;jax_enable_x64&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">colors</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax_zero_contour</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">zero_contour_finder</span><span class="p">,</span>
+    <span class="n">value_and_grad_wrapper</span><span class="p">,</span>
+    <span class="n">stopping_conditions</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For our first test we will create a function that will have two distinct closed contours.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+    <span class="k">return</span> <span class="mf">0.01</span> <span class="o">*</span> <span class="p">((</span><span class="n">p</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span> <span class="o">-</span> <span class="mi">30</span> <span class="o">*</span> <span class="n">p</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">2.0</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For reference let’s plot the function evaluated on an evenly spaced grid.  This is <strong>not</strong> used to find the contours, only for visualization purposes.  For the plot we will use a diverging symmetric log colorbar that is linear near the value of zero, this will help to visualize where the contour of interest are in the function.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">z</span><span class="p">,</span>
+    <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>
+    <span class="n">norm</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">SymLogNorm</span><span class="p">(</span><span class="n">linthresh</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">175</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">175</span><span class="p">),</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;PuOr_r&#39;</span><span class="p">,</span>
+    <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.colorbar.Colorbar at 0x7f84a017e910&gt;
+</pre></div>
+</div>
+<img alt="_images/ccf4a3cff30fb52aa49759f4f5b5c87dd6a3a0950497898afd85d2bd2f5fa2f4.png" src="_images/ccf4a3cff30fb52aa49759f4f5b5c87dd6a3a0950497898afd85d2bd2f5fa2f4.png" />
+</div>
+</div>
+</section>
+<section id="finding-the-zero-contours">
+<h2>Finding the zero contours<a class="headerlink" href="#finding-the-zero-contours" title="Link to this heading"></a></h2>
+<p>There are two required inputs to <code class="docutils literal notranslate"><span class="pre">zero_contour_finder</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value_and_grad_function</span></code>: A function of <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> that that returns the target function and its Jacobian, it is recommended that this function be <code class="docutils literal notranslate"><span class="pre">jit</span></code>ed.  This function <strong>must</strong> be wrapped in <code class="docutils literal notranslate"><span class="pre">jax.tree_util.Partial</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">init_guess</span></code>: Initial guess for a point near the zero contour.</p></li>
+</ul>
+<p>To create the <code class="docutils literal notranslate"><span class="pre">value_and_grad_function</span></code> in the required format we will use the helper <code class="docutils literal notranslate"><span class="pre">value_and_grad_wrapper</span></code>.  This takes in a function of two variables and returns a <code class="docutils literal notranslate"><span class="pre">jit</span></code>ed and <code class="docutils literal notranslate"><span class="pre">jax.tree_util.Partial</span></code>ed function we can use as an input.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">value_and_grad_wrapper</span></code> takes in the keyword <code class="docutils literal notranslate"><span class="pre">forward_mode_differentiation</span></code>, if set to true it will use <code class="docutils literal notranslate"><span class="pre">jacfwd</span></code> rather than <code class="docutils literal notranslate"><span class="pre">value_and_grad</span></code> to crete the required input.  This can be useful if your target function make use of <code class="docutils literal notranslate"><span class="pre">jax.numpy.where</span></code> and can’t be reverse auto-differentiated.</p>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v_and_g</span> <span class="o">=</span> <span class="n">value_and_grad_wrapper</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The final input is our initial guess of a point that is near the contour of interest.  Because our target function has two distinct zero contours we will run the <code class="docutils literal notranslate"><span class="pre">zero_contour_finder</span></code> function two times with different initial guesses.</p>
+<p>Looking at the plot an input point of <code class="docutils literal notranslate"><span class="pre">(-2.0,</span> <span class="pre">0.0)</span></code> should find the larger contour and the point <code class="docutils literal notranslate"><span class="pre">(4.0,</span> <span class="pre">4.0)</span></code> should find the smaller one.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Because the <code class="docutils literal notranslate"><span class="pre">value_and_grad_function</span></code> is <code class="docutils literal notranslate"><span class="pre">jit</span></code>ed before it is passed in, it will only be compiled during the first call.  When we call <code class="docutils literal notranslate"><span class="pre">zero_contour_finder</span></code> on the second input it will not re-compile.  This is why the function takes in a “value and grad function” rather than the base function only.</p>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+<span class="n">path_1</span><span class="p">,</span> <span class="n">values_1</span><span class="p">,</span> <span class="n">stopping_conditions_1</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_1</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[2]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">])</span>
+<span class="n">path_2</span><span class="p">,</span> <span class="n">values_2</span><span class="p">,</span> <span class="n">stopping_conditions_2</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_2</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[2]
+</pre></div>
+</div>
+</div>
+</div>
+<p>Both run’s returned a stopping condition of <code class="docutils literal notranslate"><span class="pre">2</span></code>, let’s check what that means by looking at the <code class="docutils literal notranslate"><span class="pre">stopping_conditions</span></code> look up table:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stopping_conditions</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{0: &#39;none&#39;, 1: &#39;end_point&#39;, 2: &#39;closed_loop&#39;}
+</pre></div>
+</div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">2</span></code> indicates that the contours have both formed a “closed_loop” before stopping.  When this happens the resulting path is truncated at the point where the path closed.</p>
+<p>Now we can plot the resulting contours along side the initial guesses and the value of each point along the contours.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">z</span><span class="p">,</span>
+    <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>
+    <span class="n">norm</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">SymLogNorm</span><span class="p">(</span><span class="n">linthresh</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">175</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">175</span><span class="p">),</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;PuOr_r&#39;</span><span class="p">,</span>
+    <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess_1</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_1</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess_2</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;path index&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;function value on contour&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">values_1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">values_2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/96da4212e74a760ea0422aaf10772c315ff3f6aa66e36653599e7967220a863f.png" src="_images/96da4212e74a760ea0422aaf10772c315ff3f6aa66e36653599e7967220a863f.png" />
+</div>
+</div>
+<p>In both cases we see that the value along the contours are within the default tolerance of <span class="math notranslate nohighlight">\(10^{-6}\)</span>.  Before we move on to our next example, let’s take a closer look at the generated path.  For clarity we will look at the smaller path, but this time plot the scatter points:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/315628b71ac9d2643bb5f40cd6a6f2c5d8f672767ce777e51468c09e4e361ab1.png" src="_images/315628b71ac9d2643bb5f40cd6a6f2c5d8f672767ce777e51468c09e4e361ab1.png" />
+</div>
+</div>
+<p>From this plot we can see that the generated point on the contour are very close to being evenly spaced.  The spacing of these points is controlled by the <code class="docutils literal notranslate"><span class="pre">delta</span></code> parameter that defaults to <code class="docutils literal notranslate"><span class="pre">0.1</span></code>.  Let’s try adjusting this to get some points that are closer together.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path_2_close</span><span class="p">,</span> <span class="n">values_2_close</span><span class="p">,</span> <span class="n">stopping_conditions_2_close</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_2</span><span class="p">,</span>
+    <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_2_close</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[0 2]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_2_close</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/5160a19cbd28f89656933076a12c09150e3520181aa6971a831101940fdb40de.png" src="_images/5160a19cbd28f89656933076a12c09150e3520181aa6971a831101940fdb40de.png" />
+</div>
+</div>
+<p>The points are so close together that on this plot it looks like a solid line.  If we try the same spacing for the longer contour we will see some different happen.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path_1_close</span><span class="p">,</span> <span class="n">values_1_close</span><span class="p">,</span> <span class="n">stopping_conditions_1_close</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_1</span><span class="p">,</span>
+    <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_1_close</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[0 0]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_1_close</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/04373dffb932c66dfb6ea17428247a8d059f116711b916f5aeefe855d751a747.png" src="_images/04373dffb932c66dfb6ea17428247a8d059f116711b916f5aeefe855d751a747.png" />
+</div>
+</div>
+<p>It looks like the contour did not close as the stopping conditions read <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">0]</span></code>!  This is because by default the <code class="docutils literal notranslate"><span class="pre">zero_contour_finder</span></code> function will trace the contour both clockwise and counterclockwise from the initial point up to 1000 steps in each direction before stopping.  The maximum number of points search in each direction is controlled by the <code class="docutils literal notranslate"><span class="pre">N</span></code> and <code class="docutils literal notranslate"><span class="pre">max_iter</span></code> parameters.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">N</span></code>: Batch size for calculating new points along the contour, by default 100. After each batch the stopping conditions are checked: does the contour hit an end point or does the contour close.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_iter</span></code>: The maximum number of batches to run in each direction from the initial point, by default 10.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The two stopping conditions are for the path in each direction.  Typical examples are:</p>
+<ul class="simple">
+<li><p>[2]: The path close during the first (clockwise) search</p></li>
+<li><p>[0, 2]: The path did not close in the first search, but did close during the second (counterclockwise) search</p></li>
+<li><p>[0, 0]: The path did not close</p></li>
+<li><p>[1, 1]: The path hit endpoints in both directions</p></li>
+</ul>
+</div>
+<p>By default it will run at most 10 batches of size 100 in each direction, and after each batch check for a stopping condition.</p>
+<p>Each batch is run as a <code class="docutils literal notranslate"><span class="pre">jax.lax.scan</span></code> of a fixed length <code class="docutils literal notranslate"><span class="pre">N</span></code> and these batches are placed in a Python <code class="docutils literal notranslate"><span class="pre">while</span></code> loop to check if a stopping condition has been triggered.  If <code class="docutils literal notranslate"><span class="pre">N</span></code> is large we don’t need as many iterations to close the contour, but we might end up wasting computation time by “over shooting” the end point by a large amount.  If <code class="docutils literal notranslate"><span class="pre">N</span></code> is small we will be limited by the speed of the raw Python loop rather than the faster <code class="docutils literal notranslate"><span class="pre">scan</span></code>.</p>
+<p>For this case we will try adjusting both values by a small amount.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path_1_close</span><span class="p">,</span> <span class="n">values_1_close</span><span class="p">,</span> <span class="n">stopping_conditions_1_close</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_1</span><span class="p">,</span>
+    <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">N</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+    <span class="n">max_iter</span><span class="o">=</span><span class="mi">15</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_1_close</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[0 2]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_1_close</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/b286fb9e3c6da71d6f34ed876d5983b3cd21f2068ed906a42fce6d2b8f971d6a.png" src="_images/b286fb9e3c6da71d6f34ed876d5983b3cd21f2068ed906a42fce6d2b8f971d6a.png" />
+</div>
+</div>
+</section>
+<section id="tolerance">
+<h2>Tolerance<a class="headerlink" href="#tolerance" title="Link to this heading"></a></h2>
+<p>The final optional keywords for the <code class="docutils literal notranslate"><span class="pre">zero_contour_finder</span></code> function are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tol</span></code>: Newton’s steps are used to bring each proposed point on the contour to be within this tolerance of zero, by default 1e-6.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_newton</span></code>: The maximum number of Newton’s steps to run, by default 5.</p></li>
+</ul>
+<p>If you need to find the contour to a higher tolerance you can adjust the <code class="docutils literal notranslate"><span class="pre">tol</span></code> value to be smaller (down to your floating point precision).  By construction, each new proposed point on the contour should be close to zero, so very few Newton’s steps should be needed to bring it back in line, but in the face of a function discontinuity or an place where the function’s gradient is large, it can take more steps.  <code class="docutils literal notranslate"><span class="pre">max_newton</span></code> controls the allowed maximum number of steps that can be taken to avoid infinite loops.</p>
+<p>As a test let’s re-run the above contours with a smaller tolerance value.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For 64 bit precision the smallest tolerance value that can be used is typically around <span class="math notranslate nohighlight">\(10^{-15}\)</span></p>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path_1</span><span class="p">,</span> <span class="n">values_1</span><span class="p">,</span> <span class="n">stopping_conditions_1</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_1</span><span class="p">,</span>
+    <span class="n">tol</span><span class="o">=</span><span class="mf">1e-15</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_1</span><span class="p">)</span>
+
+<span class="n">path_2</span><span class="p">,</span> <span class="n">values_2</span><span class="p">,</span> <span class="n">stopping_conditions_2</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">v_and_g</span><span class="p">,</span>
+    <span class="n">init_guess_2</span><span class="p">,</span>
+    <span class="n">tol</span><span class="o">=</span><span class="mf">1e-15</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[2]
+[2]
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">z</span><span class="p">,</span>
+    <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>
+    <span class="n">norm</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">SymLogNorm</span><span class="p">(</span><span class="n">linthresh</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">175</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">175</span><span class="p">),</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;PuOr_r&#39;</span><span class="p">,</span>
+    <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess_1</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_1</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess_2</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;path index&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;function value on contour&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">values_1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">values_2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="_images/e3f896bc6970e41e3d12f1f917f7cbafe8335ca78d9088fa61da2f11469b5f88.png" src="_images/e3f896bc6970e41e3d12f1f917f7cbafe8335ca78d9088fa61da2f11469b5f88.png" />
+</div>
+</div>
+<p>We can now see the value of the function along the contour is far smaller than before.</p>
+</section>
+<section id="stopping-conditions">
+<h2>Stopping conditions<a class="headerlink" href="#stopping-conditions" title="Link to this heading"></a></h2>
+<p>As pointed out in the previous section there are three different stopping conditions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: none</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1</span></code>: end point</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">2</span></code>: closed loop</p></li>
+</ul>
+<section id="none">
+<h3>None<a class="headerlink" href="#none" title="Link to this heading"></a></h3>
+<p>The maximum number of steps were taken before reaching either stopping condition below.</p>
+</section>
+<section id="end-point">
+<h3>End point<a class="headerlink" href="#end-point" title="Link to this heading"></a></h3>
+<p>The zero value contour is not always closed, this can be caused by several thing such as a discontinuity in the function.  This stopping condition is triggered when the proposed next point in the path is more than <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">delta</span></code> away from the previous point.</p>
+</section>
+<section id="closed-loop">
+<h3>Closed loop<a class="headerlink" href="#closed-loop" title="Link to this heading"></a></h3>
+<p>When a contour loops back to it’s starting point the contour is marked as being closed.  This stopping condition is triggered when the proposed next point is less than <code class="docutils literal notranslate"><span class="pre">1.1</span> <span class="pre">*</span> <span class="pre">delta</span></code> away from the starting point of the path.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="How_it_works.html" class="btn btn-neutral float-left" title="How it works" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Example_2.html" class="btn btn-neutral float-right" title="Example 2, discontinuous function" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Coleman Krawczyk.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
