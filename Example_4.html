@@ -377,7 +377,7 @@
         <span class="n">start</span><span class="p">,</span>
         <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-        <span class="n">tol</span><span class="o">=</span><span class="mf">1e-14</span>
+        <span class="n">tol</span><span class="o">=</span><span class="mf">1e-12</span>
     <span class="p">)</span>
     <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
     <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
@@ -392,26 +392,10 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>No zero contour found after 5*max_newton (25) iterations
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Counter({(2,): 35, (0, 2): 3})
 </pre></div>
 </div>
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">AttributeError</span><span class="g g-Whitespace">                            </span>Traceback (most recent call last)
-<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">13</span><span class="p">],</span> <span class="n">line</span> <span class="mi">39</span>
-<span class="g g-Whitespace">     </span><span class="mi">36</span>     <span class="n">stopping_conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">38</span> <span class="c1"># unique stopping conditions</span>
-<span class="ne">---&gt; </span><span class="mi">39</span> <span class="nb">print</span><span class="p">(</span><span class="n">Counter</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stopping_conditions</span><span class="p">]))</span>
-<span class="g g-Whitespace">     </span><span class="mi">41</span> <span class="c1"># maximum deviation from zero along any contour</span>
-<span class="nn">     42 jnp.array([jnp.abs(v).max() for v</span> in <span class="ni">values]).max</span><span class="nt">()</span>
-
-<span class="nn">Cell In[13], line 39,</span> in <span class="ni">&lt;listcomp&gt;</span><span class="nt">(.0)</span>
-<span class="g g-Whitespace">     </span><span class="mi">36</span>     <span class="n">stopping_conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-<span class="g g-Whitespace">     </span><span class="mi">38</span> <span class="c1"># unique stopping conditions</span>
-<span class="ne">---&gt; </span><span class="mi">39</span> <span class="nb">print</span><span class="p">(</span><span class="n">Counter</span><span class="p">([</span><span class="nb">tuple</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stopping_conditions</span><span class="p">]))</span>
-<span class="g g-Whitespace">     </span><span class="mi">41</span> <span class="c1"># maximum deviation from zero along any contour</span>
-<span class="nn">     42 jnp.array([jnp.abs(v).max() for v</span> in <span class="ni">values]).max</span><span class="nt">()</span>
-
-<span class="ne">AttributeError</span>: &#39;NoneType&#39; object has no attribute &#39;tolist&#39;
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(9.97430055e-13, dtype=float64)
 </pre></div>
 </div>
 </div>
@@ -446,7 +430,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/26a83dfa4566b7b867b2f9239442af5f5d87cdf7e5f17396b8c31cd9c470f436.png" src="_images/26a83dfa4566b7b867b2f9239442af5f5d87cdf7e5f17396b8c31cd9c470f436.png" />
+<img alt="_images/3c766597734144eff2d494e09da1b784c8685a61345fc311ced82c132b3d7ab6.png" src="_images/3c766597734144eff2d494e09da1b784c8685a61345fc311ced82c132b3d7ab6.png" />
 </div>
 </div>
 </section>
@@ -478,7 +462,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/6803468a3bee2fd88430e3ddb44b813c7ee5e2bb53df5152fa00970019b470a4.png" src="_images/6803468a3bee2fd88430e3ddb44b813c7ee5e2bb53df5152fa00970019b470a4.png" />
+<img alt="_images/5df6911d37a7009429fa485cb2c68749f9c83947717b4aff56fde37eef6391ec.png" src="_images/5df6911d37a7009429fa485cb2c68749f9c83947717b4aff56fde37eef6391ec.png" />
 </div>
 </div>
 <p>As expected our caustics match up with the places our grid points “bunch up.”</p>
@@ -550,7 +534,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/277678b15639e26ee6fb30be5302bfd4ca79ff7c4a24bee04becf723d1673c98.png" src="_images/277678b15639e26ee6fb30be5302bfd4ca79ff7c4a24bee04becf723d1673c98.png" />
+<img alt="_images/8636c92a93bf29cd4e8b4867c33a960586db76fe3208ae6c31751313679af8b2.png" src="_images/8636c92a93bf29cd4e8b4867c33a960586db76fe3208ae6c31751313679af8b2.png" />
 </div>
 </div>
 <section id="radial-and-tangential-critical-curves">
@@ -618,7 +602,7 @@
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Counter({(2,): 32, (0, 2): 2, (1, 1): 2})
 </pre></div>
 </div>
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(9.99200722e-15, dtype=float64)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(1.1574075e-14, dtype=float64)
 </pre></div>
 </div>
 </div>
@@ -644,7 +628,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/91a08fa8660deba86c8c46c1b6290caeffbd01f193d9346ddb52d88ffe62c810.png" src="_images/91a08fa8660deba86c8c46c1b6290caeffbd01f193d9346ddb52d88ffe62c810.png" />
+<img alt="_images/9f4edbb671b474a675776a079c6d800c21249c6a6784bf25426719a08364e9bc.png" src="_images/9f4edbb671b474a675776a079c6d800c21249c6a6784bf25426719a08364e9bc.png" />
 </div>
 </div>
 <p>Looking at the above plot looks like the two contours that are not closed might join up, but if we zoom in we can see that indeed they are different curves.</p>
@@ -661,7 +645,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/24d5428092a7913821160bd7dbb6bcb5a3e369c2c87e3839c6ad0e2e6856a5bf.png" src="_images/24d5428092a7913821160bd7dbb6bcb5a3e369c2c87e3839c6ad0e2e6856a5bf.png" />
+<img alt="_images/46224ebf6c2783732492e4546fb27651f9fbe1da10b66469029a67c08a0aafd1.png" src="_images/46224ebf6c2783732492e4546fb27651f9fbe1da10b66469029a67c08a0aafd1.png" />
 </div>
 </div>
 <p>We can similarly do this for the radial critical curves.</p>
@@ -700,7 +684,7 @@
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Counter({(2,): 2, (1, 1): 2})
 </pre></div>
 </div>
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(1.19099175e-13, dtype=float64)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Array(8.20038482e-14, dtype=float64)
 </pre></div>
 </div>
 </div>
@@ -725,7 +709,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/7337c5917b48a758554cdd271ff79e7b53050b3f8467c3e99fbcbc601546c48b.png" src="_images/7337c5917b48a758554cdd271ff79e7b53050b3f8467c3e99fbcbc601546c48b.png" />
+<img alt="_images/52229468b50fa5e24730ef595cf48d14df80f0619ac6ec53268d4906384694a6.png" src="_images/52229468b50fa5e24730ef595cf48d14df80f0619ac6ec53268d4906384694a6.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -740,7 +724,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/9098f63107ceff4f69db3b14be19a019f0aec4ac0c9ea085fa48469a074ee7b5.png" src="_images/9098f63107ceff4f69db3b14be19a019f0aec4ac0c9ea085fa48469a074ee7b5.png" />
+<img alt="_images/a1c06c3a993c8697d64cb523774a0f3a53991205ad9d9a7f4c315b6377df394f.png" src="_images/a1c06c3a993c8697d64cb523774a0f3a53991205ad9d9a7f4c315b6377df394f.png" />
 </div>
 </div>
 <p>As before, after zooming in to the non-closed contours we can see they are different curves.  If we place both the tangential and radial critical curves in the same plot at this point we will see that they define sections of the contours we found before:</p>
@@ -759,7 +743,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/91de297500413e9aef3453a23a995b3f595e680656d3b842b88a10dea424e50e.png" src="_images/91de297500413e9aef3453a23a995b3f595e680656d3b842b88a10dea424e50e.png" />
+<img alt="_images/e8039237faab60d4359d0bb71f2c780fb990a0e5c30c9475cff0ba0f218ff76b.png" src="_images/e8039237faab60d4359d0bb71f2c780fb990a0e5c30c9475cff0ba0f218ff76b.png" />
 </div>
 </div>
 </section>
@@ -793,7 +777,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/19f5826afd833673ad86d8e6649e08cded334d8eaaefc38937a5a96e2809b171.png" src="_images/19f5826afd833673ad86d8e6649e08cded334d8eaaefc38937a5a96e2809b171.png" />
+<img alt="_images/4272e8227d6e20f6ae2b1e3b8d8374fe4c914e07647a638885bc2e686c182fdd.png" src="_images/4272e8227d6e20f6ae2b1e3b8d8374fe4c914e07647a638885bc2e686c182fdd.png" />
 </div>
 </div>
 </section>
