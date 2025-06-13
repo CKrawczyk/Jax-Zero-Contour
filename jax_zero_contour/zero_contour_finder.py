@@ -92,7 +92,7 @@ def vec_step_one_tp(delta, value_and_grad_function, tol, max_newton, carry, inde
     cond2 = delta_travel > 2 * jnp.abs(delta)
     stop_condition = jnp.where((stop_condition == 0) & cond2, 1, stop_condition)
     cond3 = (delta_start < 1.1 * jnp.abs(delta)) & jnp.all(pos_in != pos_start, axis=1)
-    stop_condition = jnp.where((stop_condition == 0) & cond3, 2,stop_condition)
+    stop_condition = jnp.where((stop_condition == 0) & cond3, 2, stop_condition)
     cut = jnp.where((cond1) & (cond2 | cond3), index, cut)
     return (pos, pos_start, cut, stop_condition, h, grad), {'path': pos, 'value': h}
 
@@ -147,7 +147,7 @@ def stack_and_roll(init_pos, init_h, paths, paths_rev, roll_index):
     n_points = init_h.shape[0]
     N = paths['path'].shape[1]
     roll_amount = roll_index - N + 1
-    return{
+    return {
         'path': vec_roll(
             stack(paths_rev['path'][:, ::-1, :], init_pos.reshape(n_points, 1, 2), paths['path']),
             roll_amount,
@@ -205,7 +205,7 @@ def zero_contour_finder(
             each point on the path
     stop_output : jax.numpy.array
         List containing the stopping conditions for each guess
-    
+
     Note: after a path hits an endpoint or closes any further points on the contour are written
     to jax.numpy.nan.  The final output will be shifted so that the finite parts of the contour are
     brought to the front of the array.  The points in the resulting paths are ordered.
@@ -262,7 +262,7 @@ def zero_contour_finder(
     # If forward pass closed, don't use the reverse pass
     cut_index_rev = jnp.where(final_state_fwd[3] == 2, -1, cut_index_rev)
     paths_rev = trim_paths(jax.tree_util.tree_map(swap, paths_rev), cut_index_rev)
-    
+
     paths_combined = stack_and_roll(init_pos, init_h, paths_fwd, paths_rev, cut_index_rev)
     stopping_conditions = jnp.stack([final_state_fwd[3], final_state_rev[3]]).T
     paths_combined = threshold_cut(paths_combined, tol)
