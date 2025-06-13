@@ -3,9 +3,10 @@
 
 from .zero_contour_finder import (
     zero_contour_finder,
+    path_reduce,
     split_curves,
     value_and_grad_wrapper,
     stopping_conditions
 )
 
-__version__ = '1.0.0'
+__version__ = '2.0.0'
