@@ -1,11 +1,13 @@
 import unittest
 import jax.numpy as jnp
 import logging
+# import jaxlib
 
 from jax_zero_contour import (
     zero_contour_finder,
     value_and_grad_wrapper,
-    split_curves
+    split_curves,
+    path_reduce
 )
 
 
@@ -37,50 +39,75 @@ class TestZeroContourFinder(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_contour_1(self):
-        path, values, stopping_condition = zero_contour_finder(
+        path, stopping_condition = zero_contour_finder(
             v_and_g_rev,
             jnp.array([0.0, 0.6]),
             tol=1e-7
         )
-        output_r = jnp.sqrt((path**2).sum(axis=1))
-        self.assertTrue(jnp.allclose(output_r, 1))
-        self.assertTrue(jnp.abs(values).max() < 1e-6)
-        self.assertEqual(stopping_condition.tolist(), [2])
+        output_r = jnp.sqrt((path['path'][0]**2).sum(axis=1))
+        fdx = jnp.isfinite(output_r)
+        self.assertTrue(jnp.allclose(output_r[fdx], 1))
+        self.assertTrue(jnp.abs(path['value'][0][fdx]).max() < 1e-6)
+        self.assertEqual(stopping_condition.tolist(), [[2, 2]])
 
     def test_contour_2(self):
-        path, values, stopping_condition = zero_contour_finder(
+        path, stopping_condition = zero_contour_finder(
             v_and_g_fwd,
             jnp.array([0.0, 1.6]),
             tol=1e-7
         )
-        output_r = jnp.sqrt((path**2).sum(axis=1))
-        self.assertTrue(jnp.allclose(output_r, 2))
-        self.assertTrue(jnp.abs(values).max() < 1e-6)
-        self.assertEqual(stopping_condition.tolist(), [2])
+        output_r = jnp.sqrt((path['path'][0]**2).sum(axis=1))
+        fdx = jnp.isfinite(output_r)
+        self.assertTrue(jnp.allclose(output_r[fdx], 2))
+        self.assertTrue(jnp.abs(path['value'][0][fdx]).max() < 1e-6)
+        self.assertEqual(stopping_condition.tolist(), [[2, 2]])
+
+    def test_contour_both(self):
+        path, stopping_condition = zero_contour_finder(
+            v_and_g_fwd,
+            jnp.array([[0.0, 0.6], [0.0, 1.6]]),
+            tol=1e-7
+        )
+        output_r = jnp.sqrt((path['path']**2).sum(axis=2))
+        fdx = jnp.isfinite(output_r)
+        self.assertTrue(jnp.allclose(output_r[0][fdx[0]], 1))
+        self.assertTrue(jnp.allclose(output_r[1][fdx[1]], 2))
+        self.assertTrue(jnp.abs(path['value'][fdx]).max() < 1e-6)
+        self.assertEqual(stopping_condition.tolist(), [[2, 2], [2, 2]])
 
     def test_contour_2_small_batch(self):
-        path, values, stopping_condition = zero_contour_finder(
+        path, stopping_condition = zero_contour_finder(
             v_and_g_rev,
             jnp.array([0.0, 1.6]),
             delta=0.01,
-            N=50,
-            max_iter=20,
+            N=1000,
             tol=1e-7
         )
-        output_r = jnp.sqrt((path**2).sum(axis=1))
-        self.assertTrue(jnp.allclose(output_r, 2))
-        self.assertTrue(jnp.abs(values).max() < 1e-6)
-        self.assertEqual(stopping_condition.tolist(), [0, 2])
+        output_r = jnp.sqrt((path['path'][0]**2).sum(axis=1))
+        fdx = jnp.isfinite(output_r)
+        self.assertTrue(jnp.allclose(output_r[fdx], 2))
+        self.assertTrue(jnp.abs(path['value'][0][fdx]).max() < 1e-6)
+        self.assertEqual(stopping_condition.tolist(), [[0, 2]])
 
     def test_no_contour(self):
-        path, values, stopping_condition = zero_contour_finder(
+        path, _ = zero_contour_finder(
             v_and_g_no_contour,
             jnp.array([0.0, 1.6]),
             tol=1e-7
         )
-        self.assertIsNone(path)
-        self.assertIsNone(values)
-        self.assertIsNone(stopping_condition)
+        finite_path = jnp.isfinite(path['path'])
+        finite_value = jnp.isfinite(path['value'])
+        self.assertFalse(finite_path.any())
+        self.assertFalse(finite_value.any())
+
+    # def test_no_contour(self):
+    #     with self.assertRaises(jaxlib.xla_extension.XlaRuntimeError):
+    #         print(zero_contour_finder(
+    #             v_and_g_no_contour,
+    #             jnp.array([0.0, 1.6]),
+    #             tol=1e-7,
+    #             silent_fail=False
+    #         ))
 
     def test_split_curves(self):
         x1 = jnp.arange(0.0, 1.0, 0.1)
@@ -95,3 +122,32 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertEqual(len(result), len(expected))
         self.assertTrue(jnp.allclose(result[0], expected[0]))
         self.assertTrue(jnp.allclose(result[1], expected[1]))
+
+    def test_path_reduce(self):
+        data = {
+            'path': jnp.array([
+                [[0.0, 0.0], [0.0, 0.0], [jnp.nan, jnp.nan]],
+                [[1.0, 1.0], [jnp.nan, jnp.nan], [jnp.nan, jnp.nan]]
+            ]),
+            'value': jnp.array([
+                [0.0, 0.0, jnp.nan],
+                [0.0, jnp.nan, jnp.nan]
+            ])
+        }
+        expected = {
+            'path': [
+                jnp.array([[0.0, 0.0], [0.0, 0.0]]),
+                jnp.array([[1.0, 1.0]])
+            ],
+            'value': [
+                jnp.array([0.0, 0.0]),
+                jnp.array([0.0])
+            ]
+        }
+        result = path_reduce(data)
+        self.assertEqual(result.keys(), expected.keys())
+        self.assertEqual(len(result['path']), len(expected['path']))
+        self.assertEqual(len(result['value']), len(expected['value']))
+        for i in range(len(expected['path'])):
+            self.assertTrue(jnp.allclose(result['path'][i], expected['path'][i]))
+            self.assertTrue(jnp.allclose(result['value'][i], expected['value'][i]))

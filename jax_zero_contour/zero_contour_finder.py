@@ -20,6 +20,9 @@ def step_tangent(pos, grad, delta):
     ])
 
 
+vec_step_tangent = jax.vmap(step_tangent, in_axes=(0, 0, None))
+
+
 def step_parallel(state, value_and_grad_function):
     # take a step along the gradient (e.g. Newton's method)
     count, pos, h, grad = state
@@ -54,57 +57,237 @@ def step_parallel_tol(init_pos, value_and_grad_function, tol, max_newton):
     )
 
 
-def step_one_tp(delta, value_and_grad_function, tol, max_newton, carry, index):
-    # Take one setp perpendicular followed by Newton's method to
-    # bring it back onto the zero contour
-    pos_in, pos_start, cut, stop_condition, h, grad = carry
-    pos = step_tangent(pos_in, grad, delta)
-    _, pos, h, grad = step_parallel_tol(pos, value_and_grad_function, tol, max_newton)
+vec_step_parallel_tol = jax.vmap(step_parallel_tol, in_axes=(0, None, None, None))
 
-    # how far did this step travel
-    delta_travel = jnp.linalg.norm(pos_in - pos)
-    # how close is it to closing
-    delta_start = jnp.linalg.norm(pos_start - pos)
-    # cut is the first index at which a stopping condition has been met
+
+def take_step(carry, delta, value_and_grad_function, tol, max_newton):
+    pos_in, pos_start, _, _, h, grad = carry
+    pos = vec_step_tangent(pos_in, grad, delta)
+    _, pos, h, grad = vec_step_parallel_tol(pos, value_and_grad_function, tol, max_newton)
+    delta_travel = jnp.linalg.norm(pos_in - pos, axis=1)
+    delta_start = jnp.linalg.norm(pos_start - pos, axis=1)
+    return pos, h, grad, delta_travel, delta_start
+
+
+def null_step(carry, *_):
+    pos_in, _, _, _, h, grad = carry
+    pos_like = jnp.zeros_like(pos_in)
+    h_like = jnp.zeros_like(h)
+    return pos_like, h_like, grad, h_like, h_like
+
+
+def vec_step_one_tp(delta, value_and_grad_function, tol, max_newton, carry, index):
+    pos_in, pos_start, cut, stop_condition, _, _ = carry
     cond1 = cut == 0
-    # Newton's method moved very far from the initial point
-    # this is an indication the function has a discontinuity and an
-    # end point has been reached
+    pos, h, grad, delta_travel, delta_start = jax.lax.cond(
+        jnp.any(cond1),
+        take_step,
+        null_step,
+        carry,
+        delta,
+        value_and_grad_function,
+        tol,
+        max_newton
+    )
     cond2 = delta_travel > 2 * jnp.abs(delta)
-    stop_condition = jax.lax.select(
-        (stop_condition == 0) & cond2,
-        1,
-        stop_condition
-    )
-    # check if the contour has closed
-    cond3 = (
-        delta_start < 1.1 * jnp.abs(delta)
-    ) & (
-        jnp.all((pos_in != pos_start))
-    )
-    stop_condition = jax.lax.select(
-        (stop_condition == 0) & cond3,
-        2,
-        stop_condition
-    )
-    # set the cut value if either of the above are met for the first time
-    cut = jax.lax.select(
-        (cond1) & (cond2 | cond3),
-        index,
-        cut
-    )
-    return (pos, pos_start, cut, stop_condition, h, grad), jnp.hstack([pos, h])
+    stop_condition = jnp.where((stop_condition == 0) & cond2, 1, stop_condition)
+    cond3 = (delta_start < 1.1 * jnp.abs(delta)) & jnp.all(pos_in != pos_start, axis=1)
+    stop_condition = jnp.where((stop_condition == 0) & cond3, 2,stop_condition)
+    cut = jnp.where((cond1) & (cond2 | cond3), index, cut)
+    return (pos, pos_start, cut, stop_condition, h, grad), {'path': pos, 'value': h}
 
 
-@Partial(jax.jit, static_argnames=('N',))
-def step_H_tp(value_and_grad_function, N, tol, max_newton, pos_start, pos, delta, h, grad):
-    # use `scan` to run a single "batch" of N steps
-    step_one_part = Partial(step_one_tp, delta, value_and_grad_function, tol, max_newton)
-    return jax.lax.scan(
-        step_one_part,
-        (pos, pos_start, 0, 0, h, grad),
-        xs=jnp.arange(N)
+def trim_paths(paths, cut_index):
+    n_points = paths['path'].shape[0]
+    N = paths['path'].shape[1]
+    index = jnp.arange(N)
+    index_col = jnp.stack([index, index]).T
+    index_full = jnp.stack([index_col] * n_points)
+    index_value = jnp.stack([index] * n_points)
+    mask_path = index_full > cut_index.reshape(n_points, 1, 1)
+    mask_value = index_value > cut_index.reshape(n_points, 1)
+    return {
+        'path': jnp.where(mask_path, jnp.nan, paths['path']),
+        'value': jnp.where(mask_value, jnp.nan, paths['value'])
+    }
+
+
+def threshold_cut(paths, tol):
+    mask = paths['value'] > 20 * tol
+    stack_mask = jnp.stack([mask, mask], axis=2)
+    return {
+        'path': jnp.where(stack_mask, jnp.nan, paths['path']),
+        'value': jnp.where(mask, jnp.nan, paths['value'])
+    }
+
+
+def swap(x):
+    return jnp.swapaxes(x, 0, 1)
+
+
+vec_slice = jax.vmap(jax.lax.dynamic_index_in_dim, in_axes=(0, 0, None))
+
+
+def vec_step(value_and_grad_function, N, tol, max_newton, pos_start, pos, delta, h, grad):
+    part_step = jax.tree_util.Partial(vec_step_one_tp, delta, value_and_grad_function, tol, max_newton)
+    carry = (pos, pos_start, jnp.zeros_like(h, dtype=int), jnp.zeros_like(h, dtype=int), h, grad)
+    final_state, paths = jax.lax.scan(part_step, carry, xs=jnp.arange(N))
+    return final_state, paths
+
+
+vec_roll = jax.vmap(jnp.roll, in_axes=(0, 0, None))
+
+
+@jax.vmap
+def stack(*args):
+    return jnp.vstack([*args])
+
+
+def stack_and_roll(init_pos, init_h, paths, paths_rev, roll_index):
+    n_points = init_h.shape[0]
+    N = paths['path'].shape[1]
+    roll_amount = roll_index - N + 1
+    return{
+        'path': vec_roll(
+            stack(paths_rev['path'][:, ::-1, :], init_pos.reshape(n_points, 1, 2), paths['path']),
+            roll_amount,
+            0
+        ),
+        'value': vec_roll(
+            jnp.hstack([paths_rev['value'][:, ::-1], init_h.reshape(n_points, 1), paths['value']]),
+            roll_amount,
+            0
+        )
+    }
+
+
+@Partial(jax.jit, static_argnames=('N', 'silent_fail'))
+def zero_contour_finder(
+    value_and_grad_function,
+    init_guess,
+    delta=0.1,
+    N=1000,
+    tol=1e-6,
+    max_newton=5,
+    silent_fail=True
+):
+    '''Find the zero contour of a 2D function.
+
+    Parameters
+    ----------
+    value_and_grad_function : function
+        A function of x and y that that returns the target function and its Jacobian,
+        it is recommended that this function be jited.  This function must be wrapped
+        in jax.tree_util.Partial.
+    init_guess : jax.numpy.array
+        Initial guesses for points near the zero contour, one guess per row.
+    delta : float, optional
+        The step size to take along the contour when searching for a new point,
+        by default 0.1.
+    N : int, optional
+        The total number of steps to take in *each* direction from the starting point(s).
+        The final path will be 2N+1 in size (N points in the forward direction, N points
+        in the reverse direction, with the initial point in the middle).
+    tol : float, optional
+        Newton's steps are used to bring each proposed point on the contour to
+        be within this tolerance of zero, by default 1e-6.
+    max_newton : int, optional
+        The maximum number of Newton's steps to run, by default 5.
+
+
+    Returns
+    -------
+    paths : dict
+        The return dictionary will have two keys
+        - "path": jax.numpy.array with shape (number of guesses, 2N+1, 2) with the contours
+            paths for each guess.
+        - "value": jax.numpy.array with shape (number of guesses, 2N+1) with the function value at
+            each point on the path
+    stop_output : jax.numpy.array
+        List containing the stopping conditions for each guess
+    
+    Note: after a path hits an endpoint or closes any further points on the contour are written
+    to jax.numpy.nan.  The final output will be shifted so that the finite parts of the contour are
+    brought to the front of the array.  The points in the resulting paths are ordered.
+
+    Parts of this code use jax.lax.cond to stop taking new steps after all contours have reached
+    an endpoint or closed.  It should not be combined with jax.vmap as a result.
+    '''
+    init_guess = jnp.atleast_2d(init_guess)
+    _, init_pos, init_h, init_grad = vec_step_parallel_tol(
+        init_guess,
+        value_and_grad_function,
+        tol,
+        5 * max_newton
     )
+    if not silent_fail:
+        def excepting_message(failed_init_index):
+            jax.debug.print('Index of failed input(s): {i}', i=jnp.nonzero(failed_init_index)[0])
+            raise ValueError(f'No zero contour found after 5*max_newton ({5 * max_newton}) iterations')
+        failed_init_index = ~jnp.isfinite(init_pos).all(axis=1) | (jnp.abs(init_h) > 1e-6)
+        jax.lax.cond(
+            failed_init_index.any(),
+            lambda idx: jax.debug.callback(excepting_message, idx),
+            lambda _: None,
+            failed_init_index
+        )
+    final_state_fwd, paths_fwd = vec_step(
+        value_and_grad_function,
+        N,
+        tol,
+        max_newton,
+        init_pos,
+        init_pos,
+        delta,
+        init_h,
+        init_grad
+    )
+    # If not closed set to end of list
+    cut_index_fwd = jnp.where(final_state_fwd[3] == 0, N - 1, final_state_fwd[2] - 1)
+    paths_fwd = trim_paths(jax.tree_util.tree_map(swap, paths_fwd), cut_index_fwd)
+    end_points = vec_slice(paths_fwd['path'], cut_index_fwd, 0).squeeze()
+    final_state_rev, paths_rev = vec_step(
+        value_and_grad_function,
+        N,
+        tol,
+        max_newton,
+        end_points,
+        init_pos,
+        -delta,
+        init_h,
+        init_grad
+    )
+    # If not closed set to end of list
+    cut_index_rev = jnp.where(final_state_rev[3] == 0, N - 1, final_state_rev[2] - 1)
+    # If forward pass closed, don't use the reverse pass
+    cut_index_rev = jnp.where(final_state_fwd[3] == 2, -1, cut_index_rev)
+    paths_rev = trim_paths(jax.tree_util.tree_map(swap, paths_rev), cut_index_rev)
+    
+    paths_combined = stack_and_roll(init_pos, init_h, paths_fwd, paths_rev, cut_index_rev)
+    stopping_conditions = jnp.stack([final_state_fwd[3], final_state_rev[3]]).T
+    paths_combined = threshold_cut(paths_combined, tol)
+    return paths_combined, stopping_conditions
+
+
+def path_reduce(paths):
+    '''A helper function to remove the NaN values from a contour path dictionary.
+    Because the size of the output is dependent on the inputs this function can
+    not be jit'ed.
+
+    Parameters
+    ----------
+    paths : dict
+        output path dictionary from the zero_contour_finder function
+
+    Returns
+    -------
+    paths: dict
+        the paths object with the jax.numpy.nan values removed
+    '''
+    return {
+        'path': [p[jnp.isfinite(p).all(axis=1)] for p in paths['path']],
+        'value': [v[jnp.isfinite(v)] for v in paths['value']]
+    }
 
 
 def value_and_grad_wrapper(f, forward_mode_differentiation=False):
@@ -144,128 +327,6 @@ stopping_conditions = {
     1: 'end_point',
     2: 'closed_loop'
 }
-
-
-def zero_contour_finder(
-    value_and_grad_function,
-    init_guess,
-    delta=0.1,
-    N=100,
-    max_iter=10,
-    tol=1e-6,
-    max_newton=5
-):
-    '''Find the zero contour of a 2D function.
-
-    Parameters
-    ----------
-    value_and_grad_function : function
-        A function of x and y that that returns the target function and its Jacobian,
-        it is recommended that this function be jited.  This function must be wrapped
-        in jax.tree_util.Partial.
-    init_guess : jax.numpy.array
-        Initial guess for a point near the zero contour.
-    delta : float, optional
-        The step size to take along the contour when searching for a new point,
-        by default 0.1.
-    N : int, optional
-        Batch size for calculating new points along the contour, by default 100.
-        After each batch the stopping conditions are checked: does the contour
-        hit an end point or does the contour close.
-    max_iter : int, optional
-        The maximum number of batches to run in each direction from the initial
-        point, by default 10.
-    tol : float, optional
-        Newton's steps are used to bring each proposed point on the contour to
-        be within this tolerance of zero, by default 1e-6.
-    max_newton : int, optional
-        The maximum number of Newton's steps to run, by default 5.
-
-
-    Returns
-    -------
-    Path : jax.numpy.array
-        The ordered points along the zero contour
-    E : jax.numpy.array
-        The value of the function evaluated on the contour
-    stop_output : list
-        List containing the stopping conditions for the forward and backward batches
-
-
-    Because the number of points in the contour is not know beforehand, this function can
-    not be jited.
-    '''
-    # Use the initial guess to find a point on the contour
-    _, init_pos, h, grad = step_parallel_tol(init_guess, value_and_grad_function, tol, 5 * max_newton)
-    init_output = jnp.hstack([init_pos, h])
-    if ~(jnp.isfinite(init_pos).all()) or (jnp.abs(h) > tol):
-        # If this fails return
-        logger.warning(f'No zero contour found after 5*max_newton ({5 * max_newton}) iterations')
-        return None, None, None
-    step_part = Partial(
-        step_H_tp,
-        value_and_grad_function,
-        N,
-        tol,
-        max_newton
-    )
-
-    # From the initial position on the contour, step forward (clockwise) by `N` steps
-    i = 1
-    (_, _, cut_fwd, stop_fwd, h, grad), path_fwd = step_part(init_pos, init_pos, delta, h, grad)
-    # Trim the results if a stopping point is found (either an endpoint or a closed contour)
-    cut_point_fwd = jax.lax.select(cut_fwd == 0, N, cut_fwd)
-    path_trim_fwd = jax.lax.dynamic_slice(path_fwd, (0, 0), (cut_point_fwd, 3))
-    # If no stopping point is found go another `N` steps for at most `max_iter` rounds
-    while (stop_fwd == 0) and (i <= max_iter):
-        (_, _, cut_fwd, stop_fwd, h, grad), path_fwd_cont = step_part(init_pos, path_trim_fwd[-1, :2], delta, h, grad)
-        cut_point_fwd = jax.lax.select(cut_fwd == 0, N, cut_fwd)
-        path_trim_fwd_cont = jax.lax.dynamic_slice(path_fwd_cont, (0, 0), (cut_point_fwd, 3))
-        # Append new path to the existing path
-        path_trim_fwd = jnp.vstack([
-            path_trim_fwd,
-            path_trim_fwd_cont
-        ])
-        i += 1
-    # record what the stopping condition was
-    stop_output = jnp.array([stop_fwd])
-
-    # If not a closed loop, step backwards (counter-clockwise) by `N` steps
-    if stop_fwd != 2:
-        j = 1
-        # Note that the last point from above is entered as the new point to check a closed loop
-        # against
-        (_, _, cut_bak, stop_bak, h, grad), path_bak = step_part(path_trim_fwd[-1, :2], init_pos, -delta, h, grad)
-        # Trim the results if a stopping point is found (either an endpoint or a closed contour)
-        cut_point_bak = jax.lax.select(cut_bak == 0, N, cut_bak)
-        path_trim_bak = jax.lax.dynamic_slice(path_bak, (0, 0), (cut_point_bak, 3))
-        # If no stopping point is found go another `N` steps for at most `max_iter` rounds
-        while (stop_bak == 0) and (j <= max_iter):
-            (_, _, cut_bak, stop_bak, h, grad), path_bak_cont = step_part(path_trim_fwd[-1, :2], path_trim_bak[-1, :2], -delta, h, grad)
-            cut_point_bak = jax.lax.select(cut_bak == 0, N, cut_bak)
-            path_trim_bak_cont = jax.lax.dynamic_slice(path_bak_cont, (0, 0), (cut_point_bak, 3))
-            # Append new path to the existing path
-            path_trim_bak = jnp.vstack([
-                path_trim_bak,
-                path_trim_bak_cont
-            ])
-            j += 1
-
-        # Reverse the backwards path and append it to the start point and forward path
-        path_trim = jnp.vstack([
-            path_trim_bak[::-1],
-            init_output,
-            path_trim_fwd
-        ])
-        # record what the stopping conditions were
-        stop_output = jnp.array([stop_fwd, stop_bak])
-    else:
-        # Append the start point at the start of the path
-        path_trim = jnp.vstack([
-            init_output,
-            path_trim_fwd
-        ])
-    return path_trim[:, :2], path_trim[:, 2], stop_output
 
 
 def split_curves(a, threshold):
