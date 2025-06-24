@@ -13,14 +13,14 @@ from jax_zero_contour import (
 def f(pos):
     # The zeros of this function are circles
     # with radii equal to the ints
-    r = jnp.sqrt(jnp.sum(pos**2, axis=0)+ 1e-15)
+    r = jnp.sqrt(jnp.sum(pos**2, axis=0) + 1e-15)
     return jnp.sinc(r)
 
 
 @jax.tree_util.Partial
 def f_no_contour(pos):
     # This function as no zeros
-    r = jnp.sqrt(jnp.sum(pos**2, axis=0)+ 1e-15)
+    r = jnp.sqrt(jnp.sum(pos**2, axis=0) + 1e-15)
     return jnp.sinc(r) + 0.5
 
 
