@@ -51,6 +51,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Example 2, discontinuous function</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3.html">Example 3, no zero contour</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4.html">Example 4, critical curves and caustics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5.html">Example 5, gradients</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API:</span></p>
 <ul>
@@ -102,20 +103,18 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">colors</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax_zero_contour</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">zero_contour_finder</span><span class="p">,</span>
-    <span class="n">value_and_grad_wrapper</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax_zero_contour</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroSolver</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">Partial</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
      <span class="c1"># avoid r=0 so the grad is finite</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1e-15</span><span class="p">)</span>
-    <span class="n">theta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pos</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-15</span><span class="p">)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sinc</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">theta</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">z</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
 </pre></div>
@@ -125,10 +124,10 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">1024</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">z</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">]))</span>
 </pre></div>
 </div>
 </div>
@@ -148,54 +147,43 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/03edf7ed27bea00876d2b9d15a7724437abe44b3629490a77859ea2639ae4479.png" src="_images/03edf7ed27bea00876d2b9d15a7724437abe44b3629490a77859ea2639ae4479.png" />
+<img alt="_images/9ba7401758445b78cc98beab33cb62edddcb367602f917419d7211a4d30c04dd.png" src="_images/9ba7401758445b78cc98beab33cb62edddcb367602f917419d7211a4d30c04dd.png" />
 </div>
 </div>
 <p>As expected, the zero contours are not closed loops in this case, but instead half circles.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As we used <code class="docutils literal notranslate"><span class="pre">jnp.where</span></code> inside our function definition we will need to set <code class="docutils literal notranslate"><span class="pre">forward_mode_differentiation</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> to avoid NaN values of the gradient.</p>
+</div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v_and_g</span> <span class="o">=</span> <span class="n">value_and_grad_wrapper</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">forward_mode_differentiation</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zs</span> <span class="o">=</span> <span class="n">ZeroSolver</span><span class="p">(</span><span class="n">forward_mode_differentiation</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">])</span>
-<span class="n">path_1</span><span class="p">,</span> <span class="n">values_1</span><span class="p">,</span> <span class="n">stopping_conditions_1</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
-    <span class="n">v_and_g</span><span class="p">,</span>
-    <span class="n">init_guess_1</span><span class="p">,</span>
-    <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.6</span><span class="p">]])</span>
+<span class="n">paths</span><span class="p">,</span> <span class="n">stopping_reason</span> <span class="o">=</span> <span class="n">zs</span><span class="o">.</span><span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">,</span>
+    <span class="n">init_guess</span><span class="p">,</span>
+    <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">N</span><span class="o">=</span><span class="mi">500</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stopping_reason</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[1 1]
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[[1 1]
+ [1 1]
+ [1 1]]
 </pre></div>
 </div>
 </div>
 </div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_2</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.6</span><span class="p">])</span>
-<span class="n">path_2</span><span class="p">,</span> <span class="n">values_2</span><span class="p">,</span> <span class="n">stopping_conditions_2</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
-    <span class="n">v_and_g</span><span class="p">,</span>
-    <span class="n">init_guess_2</span><span class="p">,</span>
-    <span class="n">delta</span><span class="o">=</span><span class="mf">0.01</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">stopping_conditions_2</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[1 1]
-</pre></div>
-</div>
-</div>
-</div>
-<p>In both cases the zero finder terminated with <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">1]</span></code> indicating that it found an end point in both directions.</p>
+<p>In all cases the zero finder terminated with <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">1]</span></code> indicating that it found an end point in both directions.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
@@ -209,21 +197,20 @@
     <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess_1</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_1</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess_2</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">path_2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">paths</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C1&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="n">init_guess</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;path index&#39;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;function value on contour&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">values_2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C2&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">values_1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;C0&#39;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">paths</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/5ddfd899649d7543d33987b3b6ae857c55238275b3bad7eb8868808250cc58a8.png" src="_images/5ddfd899649d7543d33987b3b6ae857c55238275b3bad7eb8868808250cc58a8.png" />
+<img alt="_images/126dd15d0aedc39ff8853a53ff912bd2f09a000640a6eaf2b913ed636335a2ff.png" src="_images/126dd15d0aedc39ff8853a53ff912bd2f09a000640a6eaf2b913ed636335a2ff.png" />
 </div>
 </div>
 <p>We can see that the contour end points are correctly identified in the face of a discontinuity in the function.</p>

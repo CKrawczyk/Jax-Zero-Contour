@@ -51,6 +51,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2.html">Example 2, discontinuous function</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Example 3, no zero contour</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4.html">Example 4, critical curves and caustics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5.html">Example 5, gradients</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API:</span></p>
 <ul>
@@ -83,7 +84,12 @@
              
   <section id="example-3-no-zero-contour">
 <h1>Example 3, no zero contour<a class="headerlink" href="#example-3-no-zero-contour" title="Link to this heading"></a></h1>
-<p>If there is no contour the initial zero finding will fail to converge to a zero value.  After each Newton’s step the code checks the value of the function to see if it is without the set tolerance of zero, if it is not it takes another step.  After a fixed number of steps (<code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">max_newton</span></code>) if it does not terminate, the zero finding code will terminate with a <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">None,</span> <span class="pre">None)</span></code> value indicating it did not find a contour.</p>
+<p>If there is no contour the initial zero finding will fail to converge to a zero value.  After each Newton’s step the code checks the value of the function to see if it is without the set tolerance of zero, if it is not it takes another step.  After a fixed number of steps (<code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">max_newton</span></code>) if one of the inputs does not terminate, the zero finding code will write all value to <code class="docutils literal notranslate"><span class="pre">NaN</span></code> for that particular input.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is done with a threshold cut on the path’s value set to 20 times the tolerance, if the path eventually finds its way to a contour it will return non-NaN values.</p>
+</div>
+<p>If you would rather the code throw an error when any of the input points fail set the keyword <code class="docutils literal notranslate"><span class="pre">silent_fail=False</span></code>.  With this set the code will raise a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> value indicating it did not find a contour for at least one of the inputs and provide the index for those inputs.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Just because one initial point fails to find a contour does not mean another point will also fail.  Newton’s method will get stuck if its path travels through any point where the gradient is equal to zero (e.g. a maximum or minimum of the function).  Try to make sure your initial points are not near the any extremum of the function.</p>
@@ -106,10 +112,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">colors</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">jax_zero_contour</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">zero_contour_finder</span><span class="p">,</span>
-    <span class="n">value_and_grad_wrapper</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jax_zero_contour</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZeroSolver</span>
 </pre></div>
 </div>
 </div>
@@ -117,9 +120,10 @@
 <p>Let’s make a function that is always positive.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@jax</span><span class="o">.</span><span class="n">tree_util</span><span class="o">.</span><span class="n">Partial</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
      <span class="c1"># avoid r=0 so the grad is finite</span>
-    <span class="n">r</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">1e-15</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pos</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-15</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">jnp</span><span class="o">.</span><span class="n">sinc</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span>
 </pre></div>
 </div>
@@ -131,7 +135,7 @@
 <span class="n">x</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 <span class="n">y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">z</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">jnp</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">]))</span>
 </pre></div>
 </div>
 </div>
@@ -156,32 +160,119 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v_and_g</span> <span class="o">=</span> <span class="n">value_and_grad_wrapper</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zs</span> <span class="o">=</span> <span class="n">ZeroSolver</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">])</span>
-<span class="n">output</span> <span class="o">=</span> <span class="n">zero_contour_finder</span><span class="p">(</span>
-    <span class="n">v_and_g</span><span class="p">,</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">zs</span><span class="o">.</span><span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">,</span>
     <span class="n">init_guess_1</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>No zero contour found after 5*max_newton (25) iterations
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[[nan nan nan ... nan nan nan]
+ [nan nan nan ... nan nan nan]]
 </pre></div>
 </div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(None, None, None)
+</div>
+</div>
+<p>As expected, the zero finder code was unable to identify any zero values based on the initial point and all the output values are NaN.  If we wanted to let the code to return an error instead we can set the keyword <code class="docutils literal notranslate"><span class="pre">silent_fail=False</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">init_guess_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">zs</span><span class="o">.</span><span class="n">zero_contour_finder</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">,</span>
+    <span class="n">init_guess_1</span><span class="p">,</span>
+    <span class="n">silent_fail</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>ERROR:2025-06-24 13:37:47,883:jax._src.debugging:98: jax.debug.callback failed
+Traceback (most recent call last):
+  File &quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py&quot;, line 96, in debug_callback_impl
+    callback(*args)
+  File &quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py&quot;, line 336, in _flat_callback
+    callback(*args, **kwargs)
+  File &quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax_zero_contour/zero_contour_finder.py&quot;, line 274, in excepting_message
+    raise ValueError(f&#39;No zero contour found after 5 * max_newton ({5 * self.max_newton}) iterations&#39;)
+ValueError: No zero contour found after 5 * max_newton (25) iterations
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Index of failed input(s): [0 1]
+</pre></div>
+</div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">XlaRuntimeError</span><span class="g g-Whitespace">                           </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="n">line</span> <span class="mi">2</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="n">init_guess_1</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+<span class="ne">----&gt; </span><span class="mi">2</span> <span class="n">output</span> <span class="o">=</span> <span class="n">zs</span><span class="o">.</span><span class="n">zero_contour_finder</span><span class="p">(</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span>     <span class="n">f</span><span class="p">,</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span>     <span class="n">init_guess_1</span><span class="p">,</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span>     <span class="n">silent_fail</span><span class="o">=</span><span class="kc">False</span>
+<span class="g g-Whitespace">      </span><span class="mi">6</span> <span class="p">)</span>
+
+    <span class="p">[</span><span class="o">...</span> <span class="n">skipping</span> <span class="n">hidden</span> <span class="mi">5</span> <span class="n">frame</span><span class="p">]</span>
+
+<span class="nn">File /opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py:1297,</span> in <span class="ni">ExecuteReplicated.__call__</span><span class="nt">(self, *args)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1294</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ordered_effects</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_unordered_effects</span>
+<span class="g g-Whitespace">   </span><span class="mi">1295</span>     <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_host_callbacks</span><span class="p">):</span>
+<span class="g g-Whitespace">   </span><span class="mi">1296</span>   <span class="n">input_bufs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_tokens_to_inputs</span><span class="p">(</span><span class="n">input_bufs</span><span class="p">)</span>
+<span class="ne">-&gt; </span><span class="mi">1297</span>   <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xla_executable</span><span class="o">.</span><span class="n">execute_sharded</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">1298</span>       <span class="n">input_bufs</span><span class="p">,</span> <span class="n">with_tokens</span><span class="o">=</span><span class="kc">True</span>
+<span class="g g-Whitespace">   </span><span class="mi">1299</span>   <span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">1301</span>   <span class="n">result_token_bufs</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">disassemble_prefix_into_single_device_arrays</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">1302</span>       <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ordered_effects</span><span class="p">))</span>
+<span class="g g-Whitespace">   </span><span class="mi">1303</span>   <span class="n">sharded_runtime_token</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">consume_token</span><span class="p">()</span>
+
+<span class="ne">XlaRuntimeError</span>: INTERNAL: CpuCallback error calling callback: Traceback (most recent call last):
+  <span class="n">File</span> <span class="s2">&quot;&lt;frozen runpy&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">198</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_run_module_as_main</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;frozen runpy&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">88</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_run_code</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel_launcher.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">18</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/traitlets/config/application.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1075</span><span class="p">,</span> <span class="ow">in</span> <span class="n">launch_instance</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelapp.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">739</span><span class="p">,</span> <span class="ow">in</span> <span class="n">start</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/tornado/platform/asyncio.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">211</span><span class="p">,</span> <span class="ow">in</span> <span class="n">start</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/base_events.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">608</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run_forever</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/base_events.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1936</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_run_once</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/events.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">84</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_run</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">545</span><span class="p">,</span> <span class="ow">in</span> <span class="n">dispatch_queue</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">534</span><span class="p">,</span> <span class="ow">in</span> <span class="n">process_one</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">437</span><span class="p">,</span> <span class="ow">in</span> <span class="n">dispatch_shell</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/ipkernel.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">362</span><span class="p">,</span> <span class="ow">in</span> <span class="n">execute_request</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">778</span><span class="p">,</span> <span class="ow">in</span> <span class="n">execute_request</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/ipkernel.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">449</span><span class="p">,</span> <span class="ow">in</span> <span class="n">do_execute</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/zmqshell.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">549</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run_cell</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">3100</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run_cell</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">3155</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_run_cell</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/async_helpers.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">128</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_pseudo_sync_runner</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">3367</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run_cell_async</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">3612</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run_ast_nodes</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">3672</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run_code</span>
+  <span class="n">File</span> <span class="s2">&quot;/tmp/ipykernel_2307/2099799116.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">2</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/traceback_util.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">182</span><span class="p">,</span> <span class="ow">in</span> <span class="n">reraise_with_filtered_traceback</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/pjit.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">292</span><span class="p">,</span> <span class="ow">in</span> <span class="n">cache_miss</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/pjit.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">153</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_python_pjit_helper</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/pjit.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1877</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_pjit_call_impl_python</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/profiler.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">354</span><span class="p">,</span> <span class="ow">in</span> <span class="n">wrapper</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1297</span><span class="p">,</span> <span class="ow">in</span> <span class="fm">__call__</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/callback.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">782</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_wrapped_callback</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">202</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_callback</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">99</span><span class="p">,</span> <span class="ow">in</span> <span class="n">debug_callback_impl</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">336</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_flat_callback</span>
+  <span class="n">File</span> <span class="s2">&quot;/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax_zero_contour/zero_contour_finder.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">274</span><span class="p">,</span> <span class="ow">in</span> <span class="n">excepting_message</span>
+<span class="ne">ValueError</span>: No zero contour found after 5 * max_newton (25) iterations
 </pre></div>
 </div>
 </div>
 </div>
-<p>As expected, the zero finder code was unable to identify any zero values based on the initial point.</p>
 </section>
 
 

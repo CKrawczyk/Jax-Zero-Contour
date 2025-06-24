@@ -1,0 +1,109 @@
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jupyter_core/utils/__init__.py", line 154, in wrapped
+    asyncio.get_running_loop()
+RuntimeError: no running event loop
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+    executenb(
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/nbclient/client.py", line 1319, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jupyter_core/utils/__init__.py", line 158, in wrapped
+    return loop.run_until_complete(inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/nbclient/client.py", line 709, in async_execute
+    await self.async_execute_cell(
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+init_guess_1 = jnp.array([[0.0, -0.6], [0.0, 1.0]])
+output = zs.zero_contour_finder(
+    f,
+    init_guess_1,
+    silent_fail=False
+)
+------------------
+
+----- stderr -----
+ERROR:2025-06-24 13:37:47,883:jax._src.debugging:98: jax.debug.callback failed
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py", line 96, in debug_callback_impl
+    callback(*args)
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py", line 336, in _flat_callback
+    callback(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax_zero_contour/zero_contour_finder.py", line 274, in excepting_message
+    raise ValueError(f'No zero contour found after 5 * max_newton ({5 * self.max_newton}) iterations')
+ValueError: No zero contour found after 5 * max_newton (25) iterations
+----- stdout -----
+Index of failed input(s): [0 1]
+------------------
+
+[31m---------------------------------------------------------------------------[39m
+[31mXlaRuntimeError[39m                           Traceback (most recent call last)
+[36mCell[39m[36m [39m[32mIn[8][39m[32m, line 2[39m
+[32m      1[39m init_guess_1 = jnp.array([[[32m0.0[39m, -[32m0.6[39m], [[32m0.0[39m, [32m1.0[39m]])
+[32m----> [39m[32m2[39m output = [43mzs[49m[43m.[49m[43mzero_contour_finder[49m[43m([49m
+[32m      3[39m [43m    [49m[43mf[49m[43m,[49m
+[32m      4[39m [43m    [49m[43minit_guess_1[49m[43m,[49m
+[32m      5[39m [43m    [49m[43msilent_fail[49m[43m=[49m[38;5;28;43;01mFalse[39;49;00m
+[32m      6[39m [43m)[49m
+
+    [31m[... skipping hidden 5 frame][39m
+
+[36mFile [39m[32m/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py:1297[39m, in [36mExecuteReplicated.__call__[39m[34m(self, *args)[39m
+[32m   1294[39m [38;5;28;01mif[39;00m ([38;5;28mself[39m.ordered_effects [38;5;129;01mor[39;00m [38;5;28mself[39m.has_unordered_effects
+[32m   1295[39m     [38;5;129;01mor[39;00m [38;5;28mself[39m.has_host_callbacks):
+[32m   1296[39m   input_bufs = [38;5;28mself[39m._add_tokens_to_inputs(input_bufs)
+[32m-> [39m[32m1297[39m   results = [38;5;28;43mself[39;49m[43m.[49m[43mxla_executable[49m[43m.[49m[43mexecute_sharded[49m[43m([49m
+[32m   1298[39m [43m      [49m[43minput_bufs[49m[43m,[49m[43m [49m[43mwith_tokens[49m[43m=[49m[38;5;28;43;01mTrue[39;49;00m
+[32m   1299[39m [43m  [49m[43m)[49m
+[32m   1301[39m   result_token_bufs = results.disassemble_prefix_into_single_device_arrays(
+[32m   1302[39m       [38;5;28mlen[39m([38;5;28mself[39m.ordered_effects))
+[32m   1303[39m   sharded_runtime_token = results.consume_token()
+
+[31mXlaRuntimeError[39m: INTERNAL: CpuCallback error calling callback: Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel_launcher.py", line 18, in <module>
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/traitlets/config/application.py", line 1075, in launch_instance
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelapp.py", line 739, in start
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/tornado/platform/asyncio.py", line 211, in start
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/base_events.py", line 608, in run_forever
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/base_events.py", line 1936, in _run_once
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/asyncio/events.py", line 84, in _run
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py", line 545, in dispatch_queue
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py", line 534, in process_one
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py", line 437, in dispatch_shell
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/ipkernel.py", line 362, in execute_request
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/kernelbase.py", line 778, in execute_request
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/ipkernel.py", line 449, in do_execute
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/ipykernel/zmqshell.py", line 549, in run_cell
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py", line 3100, in run_cell
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py", line 3155, in _run_cell
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/async_helpers.py", line 128, in _pseudo_sync_runner
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py", line 3367, in run_cell_async
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py", line 3612, in run_ast_nodes
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/IPython/core/interactiveshell.py", line 3672, in run_code
+  File "/tmp/ipykernel_2307/2099799116.py", line 2, in <module>
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/traceback_util.py", line 182, in reraise_with_filtered_traceback
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/pjit.py", line 292, in cache_miss
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/pjit.py", line 153, in _python_pjit_helper
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/pjit.py", line 1877, in _pjit_call_impl_python
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/profiler.py", line 354, in wrapper
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 1297, in __call__
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/callback.py", line 782, in _wrapped_callback
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py", line 202, in _callback
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py", line 99, in debug_callback_impl
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax/_src/debugging.py", line 336, in _flat_callback
+  File "/opt/hostedtoolcache/Python/3.11.12/x64/lib/python3.11/site-packages/jax_zero_contour/zero_contour_finder.py", line 274, in excepting_message
+ValueError: No zero contour found after 5 * max_newton (25) iterations
+

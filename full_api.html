@@ -20,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Example 4, critical curves and caustics" href="Example_4.html" /> 
+    <link rel="prev" title="Example 5, gradients" href="Example_5.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,13 +50,18 @@
 <li class="toctree-l1"><a class="reference internal" href="Example_2.html">Example 2, discontinuous function</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_3.html">Example 3, no zero contour</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Example_4.html">Example 4, critical curves and caustics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Example_5.html">Example 5, gradients</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Zero Finder</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.split_curves"><code class="docutils literal notranslate"><span class="pre">split_curves()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.value_and_grad_wrapper"><code class="docutils literal notranslate"><span class="pre">value_and_grad_wrapper()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.zero_contour_finder"><code class="docutils literal notranslate"><span class="pre">zero_contour_finder()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.ZeroSolver"><code class="docutils literal notranslate"><span class="pre">ZeroSolver</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.ZeroSolver.__init__"><code class="docutils literal notranslate"><span class="pre">ZeroSolver.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.ZeroSolver.path_reduce"><code class="docutils literal notranslate"><span class="pre">ZeroSolver.path_reduce()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jax_zero_contour.zero_contour_finder.ZeroSolver.zero_contour_finder"><code class="docutils literal notranslate"><span class="pre">ZeroSolver.zero_contour_finder()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -113,63 +118,87 @@ at the end of the array (e.g. the contour is closed).</p>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="jax_zero_contour.zero_contour_finder.value_and_grad_wrapper">
-<span class="sig-prename descclassname"><span class="pre">jax_zero_contour.zero_contour_finder.</span></span><span class="sig-name descname"><span class="pre">value_and_grad_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward_mode_differentiation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#jax_zero_contour.zero_contour_finder.value_and_grad_wrapper" title="Link to this definition"></a></dt>
-<dd><p>Helper wrapper that uses either forward or reverse mode autodiff
-to find an inputs function value and gradient</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="jax_zero_contour.zero_contour_finder.ZeroSolver">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jax_zero_contour.zero_contour_finder.</span></span><span class="sig-name descname"><span class="pre">ZeroSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_newton</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward_mode_differentiation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#jax_zero_contour.zero_contour_finder.ZeroSolver" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="jax_zero_contour.zero_contour_finder.ZeroSolver.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_newton</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">forward_mode_differentiation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#jax_zero_contour.zero_contour_finder.ZeroSolver.__init__" title="Link to this definition"></a></dt>
+<dd><p>A class for solving zero contour values for a function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>f</strong> (<em>function</em>) – The function you want to evaluate and take the gradient of</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Newton’s steps are used to bring each proposed point on the contour to
+be within this tolerance of zero, by default 1e-6.</p></li>
+<li><p><strong>max_newton</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of Newton’s steps to run inside the path integrator,
+by default 5.  To get from the initial guess to a point on the contour
+5 * max_newton steps are used.</p></li>
 <li><p><strong>forward_mode_differentiation</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True use forward mode auto-differentiation, otherwise use reverse mode,
 by default False</p></li>
 </ul>
 </dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jax_zero_contour.zero_contour_finder.ZeroSolver.path_reduce">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path_reduce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#jax_zero_contour.zero_contour_finder.ZeroSolver.path_reduce" title="Link to this definition"></a></dt>
+<dd><p>A helper function to remove the NaN values from a contour path dictionary.
+Because the size of the output is dependent on the inputs this function can
+not be jit’ed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>paths</strong> (<em>dict</em>) – output path dictionary from the zero_contour_finder function</p>
+</dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A jited function that takes in x and y and returns the inputs
-functions value and gradient at that position</p>
+<dd class="field-even"><p><strong>paths</strong> – the paths object with the jax.numpy.nan values removed</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>function</p>
+<dd class="field-odd"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="jax_zero_contour.zero_contour_finder.zero_contour_finder">
-<span class="sig-prename descclassname"><span class="pre">jax_zero_contour.zero_contour_finder.</span></span><span class="sig-name descname"><span class="pre">zero_contour_finder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_and_grad_function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_newton</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#jax_zero_contour.zero_contour_finder.zero_contour_finder" title="Link to this definition"></a></dt>
+<dl class="py method">
+<dt class="sig sig-object py" id="jax_zero_contour.zero_contour_finder.ZeroSolver.zero_contour_finder">
+<span class="sig-name descname"><span class="pre">zero_contour_finder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_guess</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent_fail</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#jax_zero_contour.zero_contour_finder.ZeroSolver.zero_contour_finder" title="Link to this definition"></a></dt>
 <dd><p>Find the zero contour of a 2D function.</p>
+<p>After a path hits an endpoint or closes any further points on the contour are written
+to jax.numpy.nan.  The final output will be shifted so that the finite parts of the contour are
+brought to the front of the array.  The points in the resulting paths are ordered.</p>
+<p>Any points along the contour that have a function evaluation greater than 20 times the tolerance
+are also written to jax.numpy.nan.</p>
+<p>Parts of this code use jax.lax.cond to stop the calculation early when certain termination
+conditions are satisfied. As a result it should not be combined with jax.vmap.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>value_and_grad_function</strong> (<em>function</em>) – A function of x and y that that returns the target function and its Jacobian,
-it is recommended that this function be jited.  This function must be wrapped
-in jax.tree_util.Partial.</p></li>
-<li><p><strong>init_guess</strong> (<em>jax.numpy.array</em>) – Initial guess for a point near the zero contour.</p></li>
+<li><p><strong>f</strong> (<em>function</em>) – The function you want to find the zero contours for, it should have as input
+one positional argument that is an array shape (1, 2)
+(e.g. jnp.array([x_value, y_value])) and returns a single value</p></li>
+<li><p><strong>init_guess</strong> (<em>jax.numpy.array</em>) – Initial guesses for points near the zero contour, one guess per row.</p></li>
 <li><p><strong>delta</strong> (<em>float</em><em>, </em><em>optional</em>) – The step size to take along the contour when searching for a new point,
 by default 0.1.</p></li>
-<li><p><strong>N</strong> (<em>int</em><em>, </em><em>optional</em>) – Batch size for calculating new points along the contour, by default 100.
-After each batch the stopping conditions are checked: does the contour
-hit an end point or does the contour close.</p></li>
-<li><p><strong>max_iter</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of batches to run in each direction from the initial
-point, by default 10.</p></li>
-<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em>) – Newton’s steps are used to bring each proposed point on the contour to
-be within this tolerance of zero, by default 1e-6.</p></li>
-<li><p><strong>max_newton</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum number of Newton’s steps to run, by default 5.</p></li>
+<li><p><strong>N</strong> (<em>int</em><em>, </em><em>optional</em>) – The total number of steps to take in <em>each</em> direction from the starting point(s).
+The final path will be 2N+1 in size (N points in the forward direction, N points
+in the reverse direction, with the initial point in the middle). By default 1000.</p></li>
+<li><p><strong>silent_fail</strong> (<em>bool</em><em>, </em><em>optional</em>) – If False the code will raise an exception if <em>any</em> of the initial points do lead
+to a zero value with the tolerance value within the number of allowed max_newton steps.
+If True the code will continue anyways. By default True</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><ul class="simple">
-<li><p><strong>Path</strong> (<em>jax.numpy.array</em>) – The ordered points along the zero contour</p></li>
-<li><p><strong>E</strong> (<em>jax.numpy.array</em>) – The value of the function evaluated on the contour</p></li>
-<li><p><strong>stop_output</strong> (<em>list</em>) – List containing the stopping conditions for the forward and backward batches</p></li>
+<li><p><strong>paths</strong> (<em>dict</em>) – The return dictionary will have two keys.  “path”: jax.numpy.array with shape (number of
+guesses, 2N+1, 2) with the contours paths for each guess.  “value”: jax.numpy.array with
+shape (number of guesses, 2N+1) with the function value at each point on the path</p></li>
+<li><p><strong>stop_output</strong> (<em>jax.numpy.array</em>) – List containing the stopping conditions for each guess</p></li>
 </ul>
 </p>
 </dd>
 </dl>
-<p>Because the number of points in the contour is not know beforehand, this function can
-not be jited.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -178,7 +207,7 @@ not be jited.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="Example_4.html" class="btn btn-neutral float-left" title="Example 4, critical curves and caustics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Example_5.html" class="btn btn-neutral float-left" title="Example 5, gradients" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>
