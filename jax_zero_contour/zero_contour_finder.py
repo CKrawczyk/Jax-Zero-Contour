@@ -23,7 +23,7 @@ class ZeroSolver():
             grads, out = jax.jacfwd(_wrapper, argnums=(0,), has_aux=True)(*args)
             return out, grads
         return Partial(value_and_fwd_grad)
-    
+
     @staticmethod
     def value_and_grad_rev(f):
         # reverse mode value and grad
@@ -35,7 +35,7 @@ class ZeroSolver():
         j = jax.jacfwd(g)(y)
         j_2 = jnp.sum(j**2)
         return y * j / j_2
-    
+
     @staticmethod
     def tangent_solve_rev(g, y):
         # reverse mode tangent solve
@@ -50,24 +50,24 @@ class ZeroSolver():
         alpha = jnp.linalg.norm(grad)
         step = jnp.array([1.0, -1.0]) * grad[::-1]
         return pos + delta * step / alpha
-    
+
     @staticmethod
     @jax.vmap
     def stack(*args):
         # vectorize stack across batches
         return jnp.vstack([*args])
-    
+
     @staticmethod
     def swap(x):
         # swap first and second axis
         return jnp.swapaxes(x, 0, 1)
-    
+
     @staticmethod
     @Partial(jax.vmap, in_axes=(0, 0, None))
     def vec_roll(*args):
         # vectorize roll across first two arguments
         return jnp.roll(*args)
-    
+
     @staticmethod
     @Partial(jax.vmap, in_axes=(0, 0, None))
     def vec_slice(*args):
@@ -89,7 +89,7 @@ class ZeroSolver():
             'path': jnp.where(mask_path, jnp.nan, paths['path']),
             'value': jnp.where(mask_value, jnp.nan, paths['value'])
         }
-    
+
     @staticmethod
     def stack_and_roll(init_pos, init_h, paths, paths_rev, roll_index):
         # reverse the reverse path and stack it with the initial position
@@ -118,7 +118,7 @@ class ZeroSolver():
                 0
             )
         }
-    
+
     @staticmethod
     def path_reduce(paths):
         '''A helper function to remove the NaN values from a contour path dictionary.
@@ -183,13 +183,13 @@ class ZeroSolver():
         new_pos = pos - h * grad / alpha_2
         h, (grad,) = self.value_and_grad(f)(new_pos)
         return count + 1, new_pos, h, grad, f
-    
+
     def parallel_break(self, state, factor=1):
         # Stop Newton's method if the function is within
         # `tol` of zero or the max number of steps is reached
         count, _, h, _, _ = state
         return (jnp.abs(h) > self.tol) & (count <= factor * self.max_newton)
-    
+
     def step_parallel_tol(self, f, init_guess, factor=1):
         # use while loop to run Newton's method
         h, (grad,) = self.value_and_grad(f)(init_guess)
@@ -206,13 +206,13 @@ class ZeroSolver():
         # wrap Newton's method in `custom_root` to make it
         # auto diff correctly
         return jax.lax.custom_root(
-            f, 
+            f,
             init_guess,
             Partial(self.step_parallel_tol, factor=factor),
             self.tangent_solve,
             has_aux=True
         )
-    
+
     def step_one_tp_inner(self, carry):
         # take one Euler-Lagrange step followed by Newton's method
         pos_in, pos_start, _, _, h, grad, delta, f = carry
@@ -223,14 +223,14 @@ class ZeroSolver():
         delta_travel = jnp.linalg.norm(pos_in - pos, axis=1)
         delta_start = jnp.linalg.norm(pos_start - pos, axis=1)
         return pos, h, grad, delta_travel, delta_start
-    
+
     def null_step_one_tp_inner(self, carry):
         # once all paths have terminated just return zero for everything
         pos_in, _, _, _, h, grad, _, _ = carry
         pos_like = jnp.zeros_like(pos_in)
         h_like = jnp.zeros_like(h)
         return pos_like, h_like, grad, h_like, h_like
-    
+
     def step_one_tp(self, carry, index):
         pos_in, pos_start, cut, stop_condition, _, _, delta, f = carry
         # check if all paths have terminated
@@ -267,7 +267,7 @@ class ZeroSolver():
         )
         final_state, paths = jax.lax.scan(self.step_one_tp, carry, xs=jnp.arange(N))
         return final_state, paths
-    
+
     def excepting_message(self, failed_init_index):
         # error message to use if initalization fails
         jax.debug.print('Index of failed input(s): {i}', i=jnp.nonzero(failed_init_index)[0])
@@ -346,7 +346,6 @@ class ZeroSolver():
         stopping_conditions = jnp.stack([final_state_fwd[3], final_state_rev[3]]).T
         paths_combined = self.threshold_cut(paths_combined)
         return paths_combined, stopping_conditions
-
 
 
 def split_curves(a, threshold):
