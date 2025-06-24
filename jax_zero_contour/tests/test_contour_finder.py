@@ -1,34 +1,27 @@
 import unittest
 import jax.numpy as jnp
 import logging
-# import jaxlib
+import jax
 
 from jax_zero_contour import (
-    zero_contour_finder,
-    value_and_grad_wrapper,
-    split_curves,
-    path_reduce
+    ZeroSolver,
+    split_curves
 )
 
 
-def f(x, y):
+@jax.tree_util.Partial
+def f(pos):
     # The zeros of this function are circles
     # with radii equal to the ints
-    r = jnp.sqrt(x**2 + y**2 + 1e-15)
+    r = jnp.sqrt(jnp.sum(pos**2, axis=0)+ 1e-15)
     return jnp.sinc(r)
 
 
-v_and_g_rev = value_and_grad_wrapper(f)
-v_and_g_fwd = value_and_grad_wrapper(f, forward_mode_differentiation=True)
-
-
-def f_no_contour(x, y):
+@jax.tree_util.Partial
+def f_no_contour(pos):
     # This function as no zeros
-    r = jnp.sqrt(x**2 + y**2 + 1e-15)
+    r = jnp.sqrt(jnp.sum(pos**2, axis=0)+ 1e-15)
     return jnp.sinc(r) + 0.5
-
-
-v_and_g_no_contour = value_and_grad_wrapper(f_no_contour)
 
 
 class TestZeroContourFinder(unittest.TestCase):
@@ -39,10 +32,10 @@ class TestZeroContourFinder(unittest.TestCase):
         logging.disable(logging.NOTSET)
 
     def test_contour_1(self):
-        path, stopping_condition = zero_contour_finder(
-            v_and_g_rev,
-            jnp.array([0.0, 0.6]),
-            tol=1e-7
+        zs = ZeroSolver(tol=1e-7)
+        path, stopping_condition = zs.zero_contour_finder(
+            f,
+            jnp.array([0.0, 0.6])
         )
         output_r = jnp.sqrt((path['path'][0]**2).sum(axis=1))
         fdx = jnp.isfinite(output_r)
@@ -51,10 +44,10 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertEqual(stopping_condition.tolist(), [[2, 2]])
 
     def test_contour_2(self):
-        path, stopping_condition = zero_contour_finder(
-            v_and_g_fwd,
-            jnp.array([0.0, 1.6]),
-            tol=1e-7
+        zs = ZeroSolver(tol=1e-7, forward_mode_differentiation=True)
+        path, stopping_condition = zs.zero_contour_finder(
+            f,
+            jnp.array([0.0, 1.6])
         )
         output_r = jnp.sqrt((path['path'][0]**2).sum(axis=1))
         fdx = jnp.isfinite(output_r)
@@ -63,10 +56,10 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertEqual(stopping_condition.tolist(), [[2, 2]])
 
     def test_contour_both(self):
-        path, stopping_condition = zero_contour_finder(
-            v_and_g_fwd,
-            jnp.array([[0.0, 0.6], [0.0, 1.6]]),
-            tol=1e-7
+        zs = ZeroSolver(tol=1e-7, forward_mode_differentiation=True)
+        path, stopping_condition = zs.zero_contour_finder(
+            f,
+            jnp.array([[0.0, 0.6], [0.0, 1.6]])
         )
         output_r = jnp.sqrt((path['path']**2).sum(axis=2))
         fdx = jnp.isfinite(output_r)
@@ -76,12 +69,12 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertEqual(stopping_condition.tolist(), [[2, 2], [2, 2]])
 
     def test_contour_2_small_batch(self):
-        path, stopping_condition = zero_contour_finder(
-            v_and_g_rev,
+        zs = ZeroSolver(tol=1e-7)
+        path, stopping_condition = zs.zero_contour_finder(
+            f,
             jnp.array([0.0, 1.6]),
             delta=0.01,
-            N=1000,
-            tol=1e-7
+            N=1000
         )
         output_r = jnp.sqrt((path['path'][0]**2).sum(axis=1))
         fdx = jnp.isfinite(output_r)
@@ -90,10 +83,10 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertEqual(stopping_condition.tolist(), [[0, 2]])
 
     def test_no_contour(self):
-        path, _ = zero_contour_finder(
-            v_and_g_no_contour,
-            jnp.array([0.0, 1.6]),
-            tol=1e-7
+        zs = ZeroSolver(tol=1e-7)
+        path, _ = zs.zero_contour_finder(
+            f_no_contour,
+            jnp.array([0.0, 1.6])
         )
         finite_path = jnp.isfinite(path['path'])
         finite_value = jnp.isfinite(path['value'])
@@ -101,9 +94,10 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertFalse(finite_value.any())
 
     # def test_no_contour(self):
+    #     zs = ZeroSolver()
     #     with self.assertRaises(jaxlib.xla_extension.XlaRuntimeError):
-    #         print(zero_contour_finder(
-    #             v_and_g_no_contour,
+    #         print(zs.zero_contour_finder(
+    #             f_no_contour,
     #             jnp.array([0.0, 1.6]),
     #             tol=1e-7,
     #             silent_fail=False
@@ -124,6 +118,7 @@ class TestZeroContourFinder(unittest.TestCase):
         self.assertTrue(jnp.allclose(result[1], expected[1]))
 
     def test_path_reduce(self):
+        zs = ZeroSolver()
         data = {
             'path': jnp.array([
                 [[0.0, 0.0], [0.0, 0.0], [jnp.nan, jnp.nan]],
@@ -144,7 +139,7 @@ class TestZeroContourFinder(unittest.TestCase):
                 jnp.array([0.0])
             ]
         }
-        result = path_reduce(data)
+        result = zs.path_reduce(data)
         self.assertEqual(result.keys(), expected.keys())
         self.assertEqual(len(result['path']), len(expected['path']))
         self.assertEqual(len(result['value']), len(expected['value']))

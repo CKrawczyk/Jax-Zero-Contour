@@ -16,6 +16,7 @@ Welcome to Jax Zero Contour's documentation!
    Example_2
    Example_3
    Example_4
+   Example_5
 
 .. toctree::
    :maxdepth: 2

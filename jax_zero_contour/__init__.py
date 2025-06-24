@@ -2,11 +2,8 @@
 
 
 from .zero_contour_finder import (
-    zero_contour_finder,
-    path_reduce,
-    split_curves,
-    value_and_grad_wrapper,
-    stopping_conditions
+    ZeroSolver,
+    split_curves
 )
 
 __version__ = '2.0.0'

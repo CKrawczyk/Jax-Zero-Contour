@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 
 docs/README.md
+scrap.ipynb
